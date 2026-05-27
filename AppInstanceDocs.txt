@@ -1,0 +1,49 @@
+AppInstance document and explaination:
+
+imported packages:
+Flask, jsonify,threading,time,random,psutil,deque
+
+system variables:
+simulated_load: it is a metric for the load that the worker will add to the system
+active_requests = a number for the request the system will process
+load_history = this is used for smoother metrics 
+lock = just one thread
+
+
+function simulated_request_worker:
+the objective of this function is to simulate a worker and it's work load in the sistem, it takes a simulated load 
+starting at 0 and makes petitions with random times and loads using one thread, then print the info of the simulated
+petition and wait using sleep,at the end it try to reduce some load.
+
+function traffic_generator:
+this function runs constantly calling simulated worker as a constant process making petitions  
+
+function metrics smoother:
+takes the simulated load and makes a queue of 10 elements
+
+function metrics:
+this function loads real, simutaled and effective metrics of the system, effective metrics is obtained with: real cpu 
+metrics, simulated_load and active requests. 
+
+metrics endpoint:
+exposed at port 5000 , as follows http://IP:5000/metrics replace ip with the current ip or make a elastic ip
+
+this endpoint returns this JSON response:
+    {
+    "status": "  ",
+    "real_cpu_percent": x,
+    "real_ram_percent": x,
+    "real_ram_used_mb": x,
+    "simulated_load_percent": x,
+    "active_requests": x,
+    "effective_load_percent": x,
+    "timestamp": x
+}
+
+
+health endpoint:
+exposed at port 5000,as follows http://IP:5000/health replace ip with the current ip or make a elastic ip
+this endpoint returns this JSON response:
+    {
+    "status": "alive"
+    }
