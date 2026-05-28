@@ -18,17 +18,15 @@ message MetricsResponse {
 
   string status = 1;
 
-  double real_cpu_percent = 2;
+  double cpu_percent = 2;
 
-  double real_ram_percent = 3;
+  double ram_percent = 3;
 
-  double simulated_load_percent = 4;
+  double load_percent = 4;
 
   double effective_load_percent = 5;
 
   int32 active_requests = 6;
-
-  string heartbeat = 7;
 
   double timestamp = 8;
 }
