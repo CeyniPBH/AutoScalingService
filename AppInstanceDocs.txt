@@ -12,11 +12,11 @@ lock = just one thread
 
 function simulated_request_worker:
 the objective of this function is to simulate a worker and it's work load in the sistem, it takes a simulated load 
-starting at 0 and makes petitions with random times and loads using one thread, then print the info of the simulated
-petition and wait using sleep,at the end it try to reduce some load.
+starting at 0 and makes requests with random times and loads using one thread, then print the info of the simulated
+request and wait using sleep,at the end it try to reduce some load.
 
 function traffic_generator:
-this function runs constantly calling simulated worker as a constant process making petitions  
+this function runs constantly calling simulated worker as a constant process making requests  
 
 function metrics smoother:
 takes the simulated load and makes a queue of 10 elements
