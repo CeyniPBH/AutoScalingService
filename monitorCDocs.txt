@@ -1,0 +1,30 @@
+monitorC document and explaination:
+
+imported packages: concurrent,requests,grpc(grcpio)
+
+system variables:
+contants for /metrics and /health from the IP of the same machine, it
+will use env varibles when encapsuled.
+
+the main flow occurs inside Monitor service into at least Ping and
+GetMetrics functions and served inside serve,a local server to be
+accessed by MonitorS.
+
+function Ping:
+makes a health check to the /health endpoind and processes it to return:
+fail,not alive or pong if alive.
+
+function GetMetrics:
+makes a request to the /metrics endpoind and processes it to return:
+fail, A JSON response or and exception
+
+function serve:
+creates a grpc server with 10 threads(workers) for concurrent requests,
+then binds our implementation of ping and GetMetrics to the grpc server
+so they can be accesed from a grpc request
+
+expose a port for the server,in this case 50051
+starts the server and make a log with the info of the server running
+
+the server keeps running indefinitely until manually terminated
+
