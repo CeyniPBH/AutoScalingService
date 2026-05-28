@@ -72,6 +72,10 @@ The gRPC server should start on port `50051`.
 
 ---
 
+### If needed to reload grpc proto files use this command
+```
+python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. metrics.proto
+```
 ## About Pylance Warnings
 
 You may see warnings such as:
