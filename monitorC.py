@@ -45,11 +45,12 @@ class MonitorService(metrics_pb2_grpc.MonitorServiceServicer):
 
             return metrics_pb2.MetricsResponse(# type: ignore
                 status=data["status"],
-                cpu_percent=data["cpu_percent"],
-                ram_percent=data["ram_percent"],
-                load_percent=data["load_percent"],
+                real_cpu_percent=data["cpu_percent"],
+                real_ram_percent=data["ram_percent"],
+                simulated_load_percent=data["load_percent"],
                 effective_load_percent=data["effective_load_percent"],
                 active_requests=data["active_requests"],
+                heartbeat=data["status"],
                 timestamp=data["timestamp"]
             )
 
