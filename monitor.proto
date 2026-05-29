@@ -4,6 +4,7 @@ package monitor;
 
 service MonitorService {
   rpc RegisterInstance (RegisterRequest) returns (RegisterResponse);
+  rpc DeregisterInstance (RegisterRequest) returns (RegisterResponse);
   rpc SendMetrics (MetricsRequest) returns (MetricsResponse);
   rpc GetMetrics (Empty) returns (MetricsList);
   rpc Ping (Empty) returns (Pong);

@@ -11,20 +11,16 @@ class MonitorServiceServicer(monitor_pb2_grpc.MonitorServiceServicer):
         self.registered_instances = {}
         self.lock = threading.Lock()
 
-    def autoscaler_loop(self):
-        print("\n[Autoscaler] Loop de evaluación de métricas iniciado...")
+    def metrics_collector_loop(self):
+        print("\n[MonitorS] Loop de recolección de métricas iniciado...")
         while True:
-            time.sleep(5)  # Evaluar cada 5 segundos
+            time.sleep(5)  # (5 segundos)
             with self.lock:
                 instances = list(self.registered_instances.items())
             
-            total_load = 0
-            active_nodes = 0
-            
-            # Pedir métricas a cada nodo registrado
             for instance_id, ip in instances:
                 try:
-                    # Conectar al monitorC de la instancia (puerto 50052)
+                    # Conectar al monitorC 
                     channel = grpc.insecure_channel(f'{ip}:50052')
                     stub = monitor_pb2_grpc.MonitorServiceStub(channel)
                     metrics = stub.GetNodeMetrics(monitor_pb2.Empty(), timeout=2)
@@ -32,29 +28,30 @@ class MonitorServiceServicer(monitor_pb2_grpc.MonitorServiceServicer):
                     with self.lock:
                         self.metrics_store[instance_id] = {
                             'status': metrics.status,
+                            'cpu_percent': metrics.cpu_percent,
+                            'ram_percent': metrics.ram_percent,
+                            'load_percent': metrics.load_percent,
                             'effective_load_percent': metrics.effective_load_percent,
-                            'active_requests': metrics.active_requests
+                            'active_requests': metrics.active_requests,
+                            'timestamp': metrics.timestamp
                         }
-                    total_load += metrics.effective_load_percent
-                    active_nodes += 1
                 except Exception as e:
-                    print(f"[Autoscaler] No se pudo conectar a {instance_id} ({ip}): {e}")
-            
-            # Tomar decisión de autoescalado
-            if active_nodes > 0:
-                avg_load = total_load / active_nodes
-                print(f"[Autoscaler] Carga promedio del cluster: {avg_load:.2f}% | Nodos: {active_nodes}")
-                
-                if avg_load > 80:
-                    print("[ALERTA] 🔥 Cluster sobrecargado (>80%). ACCIÓN: ESCALAR (Crear nueva instancia)")
-                elif avg_load < 20 and active_nodes > 1:
-                    print("[ALERTA] ❄️ Baja carga (<20%). ACCIÓN: DESESCALAR (Apagar instancia)")
+                    print(f"[MonitorS] No se pudo recolectar métricas de {instance_id} ({ip}): {e}")
 
     def RegisterInstance(self, request, context):
         print(f"Registrando instancia: {request.instance_id} con IP: {request.ip_address}")
         with self.lock:
             self.registered_instances[request.instance_id] = request.ip_address
         return monitor_pb2.RegisterResponse(success=True, message="Instancia registrada con éxito")
+
+    def DeregisterInstance(self, request, context):
+        print(f"Desregistrando instancia: {request.instance_id}")
+        with self.lock:
+            if request.instance_id in self.registered_instances:
+                del self.registered_instances[request.instance_id]
+            if request.instance_id in self.metrics_store:
+                del self.metrics_store[request.instance_id]
+        return monitor_pb2.RegisterResponse(success=True, message="Instancia desregistrada con éxito")
 
     def SendMetrics(self, request, context):
         print(
@@ -100,8 +97,8 @@ def serve():
     servicer = MonitorServiceServicer()
     monitor_pb2_grpc.add_MonitorServiceServicer_to_server(servicer, server)
     
-    # Iniciar el hilo del autoescalador en segundo plano
-    threading.Thread(target=servicer.autoscaler_loop, daemon=True).start()
+    # Iniciar el hilo recolector de métricas en segundo plano
+    threading.Thread(target=servicer.metrics_collector_loop, daemon=True).start()
     
     server.add_insecure_port('[::]:50051')
     print("MonitorS (Servidor) iniciando en el puerto 50051...")

@@ -1,5 +1,8 @@
 from concurrent import futures
 import requests
+import sys
+import signal
+import time
 
 import grpc
 import monitor_pb2 
@@ -59,7 +62,25 @@ class MonitorService(monitor_pb2_grpc.MonitorServiceServicer):
             context.set_details(str(e))
             return monitor_pb2.InstanceMetrics()# type: ignore
 
+def handle_shutdown(signum, frame):
+    print("\nRecibida señal de apagado. Desregistrando instancia...")
+    try:
+        channel = grpc.insecure_channel('127.0.0.1:50051')
+        stub = monitor_pb2_grpc.MonitorServiceStub(channel)
+        request = monitor_pb2.RegisterRequest(
+            instance_id="nodo_flask_1",
+            ip_address="127.0.0.1"
+        )
+        response = stub.DeregisterInstance(request, timeout=5)
+        print(f"Éxito: {response.message}")
+    except Exception as e:
+        print(f"Advertencia: No se pudo desregistrar en MonitorS: {e}")
+    print("Saliendo...")
+    sys.exit(0)
+
 def serve():
+    signal.signal(signal.SIGINT, handle_shutdown)
+    signal.signal(signal.SIGTERM, handle_shutdown)
 
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
 
@@ -72,22 +93,28 @@ def serve():
     server.start()
     print("MonitorC gRPC server running on port 50052")
 
-    # Registrar esta instancia en MonitorS (que corre en el puerto 50051)
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            print(f"Intentando registrar instancia en MonitorS (intento {attempt + 1}/{max_retries})...")
+            channel = grpc.insecure_channel('127.0.0.1:50051')
+            stub = monitor_pb2_grpc.MonitorServiceStub(channel)
+            request = monitor_pb2.RegisterRequest(
+                instance_id="nodo_flask_1",
+                ip_address="127.0.0.1"
+            )
+            response = stub.RegisterInstance(request, timeout=5)
+            print(f"Éxito: {response.message}")
+            break
+        except Exception as e:
+            print(f"Advertencia: No se pudo registrar en MonitorS (intento {attempt + 1})")
+            if attempt < max_retries - 1:
+                time.sleep(3)
+
     try:
-        print("Intentando registrar instancia en MonitorS...")
-        channel = grpc.insecure_channel('127.0.0.1:50051')
-        stub = monitor_pb2_grpc.MonitorServiceStub(channel)
-        request = monitor_pb2.RegisterRequest(
-            instance_id="nodo_flask_1",
-            ip_address="127.0.0.1"
-        )
-        response = stub.RegisterInstance(request, timeout=5)
-        print(f"Éxito: {response.message}")
-    except Exception as e:
-        print(f"Advertencia: No se pudo registrar en MonitorS: {e}")
-
-    server.wait_for_termination()
-
+        server.wait_for_termination()
+    except KeyboardInterrupt:
+        handle_shutdown(signal.SIGINT, None)
 
 if __name__ == "__main__":
     serve()
