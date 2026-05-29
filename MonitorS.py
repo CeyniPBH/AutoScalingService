@@ -3,6 +3,8 @@ import time
 import grpc
 import monitor_pb2
 import monitor_pb2_grpc
+import metrics_pb2
+import metrics_pb2_grpc
 import threading
 
 class MonitorServiceServicer(monitor_pb2_grpc.MonitorServiceServicer):
@@ -22,8 +24,8 @@ class MonitorServiceServicer(monitor_pb2_grpc.MonitorServiceServicer):
                 try:
                     # Conectar al monitorC 
                     channel = grpc.insecure_channel(f'{ip}:50052')
-                    stub = monitor_pb2_grpc.MonitorServiceStub(channel)
-                    metrics = stub.GetNodeMetrics(monitor_pb2.Empty(), timeout=2)
+                    stub = metrics_pb2_grpc.MonitorServiceStub(channel)
+                    metrics = stub.GetNodeMetrics(metrics_pb2.Empty(), timeout=2)
                     
                     with self.lock:
                         self.metrics_store[instance_id] = {
@@ -35,6 +37,7 @@ class MonitorServiceServicer(monitor_pb2_grpc.MonitorServiceServicer):
                             'active_requests': metrics.active_requests,
                             'timestamp': metrics.timestamp
                         }
+                    print(f"[MonitorS] Métricas recolectadas de {instance_id}: CPU {metrics.cpu_percent}% | RAM {metrics.ram_percent}%")
                 except Exception as e:
                     print(f"[MonitorS] No se pudo recolectar métricas de {instance_id} ({ip}): {e}")
 
