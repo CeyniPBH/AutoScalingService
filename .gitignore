@@ -8,5 +8,8 @@ instance/
 test_*.py
 *.db
 *_pb2.py
+*_pb2.pyi
+*_pb2_grpc.pyi
 *_pb2_grpc.py
 .env
+*.pdf

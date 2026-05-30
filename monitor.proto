@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package monitor;
+
+service MonitorService {
+  rpc RegisterInstance (RegisterRequest) returns (RegisterResponse);
+  rpc DeregisterInstance (RegisterRequest) returns (RegisterResponse);
+  rpc SendMetrics (MetricsRequest) returns (MetricsResponse);
+  rpc GetMetrics (Empty) returns (MetricsList);
+  rpc Ping (Empty) returns (Pong);
+  rpc GetNodeMetrics (Empty) returns (InstanceMetrics);
+}
+
+message RegisterRequest {
+  string instance_id = 1;
+  string ip_address = 2;
+}
+
+message RegisterResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message MetricsRequest {
+  string instance_id = 1;
+  string status = 2;
+  double cpu_percent = 3;
+  double ram_percent = 4;
+  double load_percent = 5;
+  double effective_load_percent = 6;
+  int32 active_requests = 7;
+  double timestamp = 8;
+}
+
+message MetricsResponse {
+  bool success = 1;
+}
+
+message Empty {
+}
+
+message Pong {
+  string message = 1;
+}
+
+message InstanceMetrics {
+  string instance_id = 1;
+  string status = 2;
+  double cpu_percent = 3;
+  double ram_percent = 4;
+  double load_percent = 5;
+  double effective_load_percent = 6;
+  int32 active_requests = 7;
+  double timestamp = 8;
+}
+
+message MetricsList {
+  repeated InstanceMetrics instances = 1;
+}
